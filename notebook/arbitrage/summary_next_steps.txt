@@ -1,0 +1,7 @@
+Analysis shows that:
+- some within-market arbitrage oppportunities exist. However, they are limited in time
+- across markets, the most relevant arbitrage is on the score vs under x goals, for x above 4
+
+
+Next steps:
+- Implement live tracker (still delayed) to see if those opportunities exist for real (i.e. if bet can be backed)
