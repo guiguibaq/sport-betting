@@ -2,3 +2,5 @@ betfairlightweight
 pandas
 matplotlib
 scipy
+luigi
+pyarrow

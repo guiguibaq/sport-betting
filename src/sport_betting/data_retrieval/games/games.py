@@ -1,8 +1,8 @@
 # coding: utf-8
 
-import requests
 import dateutil.parser
 import pandas as pd
+import requests
 
 
 def parse_matches(matches_json: dict) -> list:
@@ -46,6 +46,10 @@ def get_list_matches(api_token: str, competition_id: str = "CL", year: int = 202
     # Fetch data from the API
     r_matches = requests.get(url=api_endpoint, headers={'X-Auth-Token': api_token})
     matches_json = r_matches.json()
+
+    # In case of request error, raise exception
+    if r_matches.status_code == 403:
+        raise ValueError("Error while fetching data from API : {}".format(matches_json.get('message')))
 
     # Parse matches
     list_games = parse_matches(matches_json=matches_json)
