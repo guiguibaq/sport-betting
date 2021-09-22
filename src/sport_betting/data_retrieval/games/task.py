@@ -13,7 +13,7 @@ class TaskGamesRetrieval(luigi.Task):
     year = luigi.IntParameter()
 
     def output(self):
-        output_path = os.path.join(DATA_DIR, str(self.year), "games_list.parquet")
+        output_path = os.path.join(DATA_DIR, self.competition_id, str(self.year), "football-data", "games_list.parquet")
         return luigi.LocalTarget(path=output_path)
 
     def run(self):

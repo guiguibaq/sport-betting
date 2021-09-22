@@ -1,5 +1,5 @@
 import pandas as pd
-from sport_betting.retreive_data import retrieve_game_data, preprocess_game_data
+from sport_betting._old.retreive_data import retrieve_game_data, preprocess_game_data
 
 
 def retrieve_avg_game_data(df_metadata, timedelta_min=None, timedelta_max=None) -> pd.DataFrame:
