@@ -40,11 +40,10 @@ def get_list_matches(api_token: str, competition_id: str = "CL", year: int = 202
     :return:
     """
     # Format API endpoint to be called
-    api_endpoint = "https://api.football-data.org/v2/competitions/{}/matches?season={}".format(competition_id,
-                                                                                               year)
+    api_endpoint = "https://api.football-data.org/v2/competitions/{}/matches".format(competition_id)
 
     # Fetch data from the API
-    r_matches = requests.get(url=api_endpoint, headers={'X-Auth-Token': api_token})
+    r_matches = requests.get(url=api_endpoint, headers={'X-Auth-Token': api_token}, params={"season": year})
     matches_json = r_matches.json()
 
     # In case of request error, raise exception

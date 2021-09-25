@@ -17,7 +17,7 @@ class TaskGamesRetrieval(luigi.Task):
         return luigi.LocalTarget(path=output_path)
 
     def run(self):
-        api_token = APIConfig().football_data_token
+        api_token = APIConfig().football_data_api_key
 
         df_games = get_list_matches(api_token=api_token,
                                     competition_id=self.competition_id,

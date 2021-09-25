@@ -14,5 +14,5 @@ class APIConfig(luigi.Config):
         return config
 
     @property
-    def football_data_token(self):
-        return self.get_config()['FootballData']['token']
+    def football_data_api_key(self):
+        return self.get_config()['FootballData']['api_key']
