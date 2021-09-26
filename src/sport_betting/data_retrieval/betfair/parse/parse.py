@@ -20,7 +20,7 @@ def load_markets(file_paths: list):
         if os.path.isdir(file_path):
             for path in glob.iglob(file_path + '**/**/*.bz2', recursive=True):
                 f = bz2.BZ2File(path, 'rb')
-                yield f
+                yield f, os.path.basename(os.path.dirname(file_path))
                 f.close()
         elif os.path.isfile(file_path):
             ext = os.path.splitext(file_path)[1]
@@ -28,19 +28,21 @@ def load_markets(file_paths: list):
             if ext == '.tar':
                 with tarfile.TarFile(file_path) as archive:
                     for file in archive:
-                        yield bz2.open(archive.extractfile(file))
+                        yield bz2.open(archive.extractfile(file)), os.path.basename(os.path.dirname(file_path))
             # or a zip archive
             elif ext == '.zip':
                 with zipfile.ZipFile(file_path) as archive:
                     for file in archive.namelist():
-                        yield bz2.open(archive.open(file))
+                        yield bz2.open(archive.open(file)), os.path.basename(os.path.dirname(file_path))
 
     return None
 
 
 def retrieve_game_data(raw_files_directory: str, betfair_trading: betfairlightweight.APIClient) -> dict:
     # Get list of files corresponding to markets
-    list_markets = [os.path.join(raw_files_directory, file) for file in os.listdir(raw_files_directory)]
+    list_markets = [os.path.join(raw_files_directory, daily_dir, file)
+                    for daily_dir in os.listdir(raw_files_directory)
+                    for file in os.listdir(os.path.join(raw_files_directory, daily_dir))]
 
     # Initialize dictionary
     data_dict = {
@@ -57,7 +59,7 @@ def retrieve_game_data(raw_files_directory: str, betfair_trading: betfairlightwe
         "in_play": [],
     }
 
-    for file_obj in load_markets(list_markets):
+    for file_obj, daily_dir in load_markets(list_markets):
         stream = betfair_trading.streaming.create_historical_generator_stream(
             file_path=file_obj,
             listener=betfairlightweight.StreamListener(max_latency=None),

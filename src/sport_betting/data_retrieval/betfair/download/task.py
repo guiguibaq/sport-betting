@@ -30,7 +30,6 @@ class TaskDownloadFiles(luigi.Task):
         with self.output().temporary_path() as tmp_path:
             os.makedirs(tmp_path)
 
-            loop = asyncio.get_event_loop()
-            dls = loop.run_until_complete(download_betfair_files(df_games=df_games,
-                                                                 dl_directory=tmp_path)
-                                          )
+            asyncio.run(download_betfair_files(df_games=df_games,
+                                               dl_directory=tmp_path)
+                        )

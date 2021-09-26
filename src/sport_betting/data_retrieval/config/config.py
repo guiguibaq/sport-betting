@@ -4,6 +4,8 @@ import os
 import configparser
 from sport_betting import CONFIG_DIR
 
+import re
+
 
 class APIConfig(luigi.Config):
     path = luigi.Parameter(default=os.path.join(CONFIG_DIR, "config.cfg"))
@@ -35,8 +37,26 @@ class APIConfig(luigi.Config):
 
     @property
     def betfair_cert_file(self):
-        return self.get_config()['Betfair']['cert_file']
+        cert = None
+        for file in os.listdir(self.betfair_certs):
+            ext = os.path.splitext(file)[-1]
+            if ext in [".crt", ".cert"]:
+                cert = os.path.join(self.betfair_certs, file)
+
+        if cert:
+            return cert
+        else:
+            raise ValueError("Missing certificate (.crt, .cert) in certificate directory {}".format(self.betfair_certs))
 
     @property
     def betfair_cert_key(self):
-        return self.get_config()['Betfair']['key_file']
+        key = None
+        for file in os.listdir(self.betfair_certs):
+            ext = os.path.splitext(file)[-1]
+            if ext == ".key":
+                key = os.path.join(self.betfair_certs, file)
+
+        if key:
+            return key
+        else:
+            raise ValueError("Missing key file (.key) in certificate directory {}".format(self.betfair_certs))
