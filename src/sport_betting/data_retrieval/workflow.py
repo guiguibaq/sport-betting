@@ -2,15 +2,15 @@
 
 import luigi
 
-from sport_betting.data_retrieval.games.task import TaskGamesRetrieval
+from sport_betting.data_retrieval.betfair.download.task import TaskDownloadFiles
 
 
 class WorkflowDataRetrieval(luigi.WrapperTask):
     competition_id = luigi.Parameter(default="CL")
 
     def requires(self):
-        for year in [2018, 2019, 2020]:
-            yield TaskGamesRetrieval(year=year, competition_id=self.competition_id)
+        for year in [2018]:
+            yield TaskDownloadFiles(year=year, competition_id=self.competition_id)
 
 
 if __name__ == '__main__':

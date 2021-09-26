@@ -17,7 +17,6 @@ def parse_matches(matches_json: dict) -> list:
     # Parse all matches
     for match in matches_json.get('matches'):
         match_data = {
-            "id": match.get("id"),
             "timestamp": dateutil.parser.parse(match.get('utcDate')),
             "date": dateutil.parser.parse(match.get('utcDate')).date(),
             "stage": match.get("stage"),

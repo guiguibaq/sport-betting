@@ -16,3 +16,27 @@ class APIConfig(luigi.Config):
     @property
     def football_data_api_key(self):
         return self.get_config()['FootballData']['api_key']
+
+    @property
+    def betfair_user(self):
+        return self.get_config()['Betfair']['email']
+
+    @property
+    def betfair_pwd(self):
+        return self.get_config()['Betfair']['password']
+
+    @property
+    def betfair_api_key(self):
+        return self.get_config()['Betfair']['api_key']
+
+    @property
+    def betfair_certs(self):
+        return self.get_config()['Betfair']['certs_dir']
+
+    @property
+    def betfair_cert_file(self):
+        return self.get_config()['Betfair']['cert_file']
+
+    @property
+    def betfair_cert_key(self):
+        return self.get_config()['Betfair']['key_file']

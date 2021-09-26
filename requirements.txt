@@ -4,3 +4,5 @@ matplotlib
 scipy
 luigi
 pyarrow
+unidecode
+aiohttp
