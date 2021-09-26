@@ -1,25 +1,18 @@
 # coding: utf-8
 import asyncio
 import datetime
-import functools
+import json
 import os
 from collections import namedtuple
 
 import betfairlightweight
+import requests
 from pandas import DataFrame
 
+from sport_betting.data_retrieval import run_in_executor
 from sport_betting.data_retrieval.config.config import APIConfig
 
 DatedListFiles = namedtuple("DatedListFiles", ["date", "file_name"])
-
-
-def run_in_executor(f):
-    @functools.wraps(f)
-    async def inner(*args, **kwargs):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: f(*args, **kwargs))
-
-    return inner
 
 
 def get_list_game_days(df_games: DataFrame) -> list:
@@ -60,7 +53,13 @@ def get_files_to_dl_day(game_day: datetime.datetime, betfair_trading: betfairlig
     }
 
     # Get list files
-    list_files = betfair_trading.historic.get_file_list(**data)
+    list_files = None
+    while list_files is None:
+        try:
+            list_files = betfair_trading.historic.get_file_list(**data)
+        except (requests.exceptions.Timeout, json.decoder.JSONDecodeError,
+                betfairlightweight.exceptions.InvalidResponse, betfairlightweight.exceptions.APIError):
+            continue
 
     return [DatedListFiles(game_day.strftime('%Y%m%d'), file) for file in list_files]
 
@@ -81,8 +80,16 @@ def download_file(file_path: DatedListFiles, dl_directory: str, betfair_trading:
         os.makedirs(directory_path, exist_ok=True)
 
     # Download file
-    betfair_trading.historic.download_file(file_path=file_path.file_name,
-                                           store_directory=directory_path)
+    filename = None
+    while filename is None:
+        try:
+            filename = betfair_trading.historic.download_file(file_path=file_path.file_name,
+                                                              store_directory=directory_path)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError,
+                betfairlightweight.exceptions.APIError):
+            continue
+
+    return filename
 
 
 async def download_betfair_files(df_games: DataFrame, dl_directory: str):
@@ -90,7 +97,7 @@ async def download_betfair_files(df_games: DataFrame, dl_directory: str):
     Download Betfair game day files based on games dataframe
     :param df_games: games dataframe
     :param dl_directory: local directory where the files will be stored
-    :return:
+    :return: list of files downloaded
     """
     # Get list of game days
     list_game_days = get_list_game_days(df_games=df_games)
@@ -103,6 +110,8 @@ async def download_betfair_files(df_games: DataFrame, dl_directory: str):
                                            certs=api_cfg.betfair_certs)
     trading.login()
 
+    trading.betting.list_events()
+
     # Get list of files to DL
     list_files_tasks = [asyncio.create_task(get_files_to_dl_day(day, trading)) for day in list_game_days]
     list_files_nested = [await t for t in asyncio.as_completed(list_files_tasks)]
@@ -112,6 +121,8 @@ async def download_betfair_files(df_games: DataFrame, dl_directory: str):
 
     # Download files
     list_dl_tasks = [asyncio.create_task(download_file(file, dl_directory, trading)) for file in list_files]
-    results = [await t for t in asyncio.as_completed(list_dl_tasks)]
+    files_downloaded = [await t for t in asyncio.as_completed(list_dl_tasks)]
 
     trading.logout()
+
+    return files_downloaded
