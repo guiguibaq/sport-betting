@@ -18,6 +18,7 @@ class TaskDownloadFiles(luigi.Task):
         reqs = {
             "games": TaskGamesRetrieval(competition_id=self.competition_id, year=self.year)
         }
+        return reqs
 
     def output(self):
         output_path = os.path.join(DATA_DIR, self.competition_id, str(self.year), "betfair", "raw_files")
