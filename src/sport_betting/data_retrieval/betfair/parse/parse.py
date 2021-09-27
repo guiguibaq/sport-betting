@@ -1,27 +1,51 @@
 # coding: utf-8
-
 import bz2
-import glob
+import gc
+import multiprocessing
 import os
+import re
 import tarfile
 import zipfile
+from collections import namedtuple
+from datetime import datetime
+from functools import partial
+from heapq import heapreplace
+from typing import List
 from unittest.mock import patch
 
 import betfairlightweight
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+from betfairlightweight.endpoints import Streaming
+
+MarketFile = namedtuple("MarketFile", ("path", "size"))
 
 
-# loading from tar and extracting files
-from sport_betting.data_retrieval.config.config import APIConfig
+def create_equal_size_chunk(list_market_files: List[MarketFile], n_chunks: int, sort=True) -> list:
+    bins = [[0] for _ in range(n_chunks)]
+    if sort:
+        list_market_files = sorted(list_market_files, key=lambda x: x.size)
+    for market_file in list_market_files:
+        least = bins[0]
+        least[0] += market_file.size
+        least.append(market_file)
+        heapreplace(bins, least)
+    bins = [x[1:] for x in bins]
+    return [[market_file.path for market_file in bin] for bin in bins]
+
+
+def pd_df_to_parquet(df: pd.DataFrame, path_save: str):
+    table = pa.Table.from_pandas(df)
+    pq.write_to_dataset(table, root_path=path_save, compression='snappy')
 
 
 def load_markets(file_paths: list):
-    for file_path in file_paths:
-        if os.path.isdir(file_path):
-            for path in glob.iglob(file_path + '**/**/*.bz2', recursive=True):
-                f = bz2.BZ2File(path, 'rb')
-                yield f, os.path.basename(os.path.dirname(file_path))
-                f.close()
+    for file_path in [file_path for file_path in file_paths if isinstance(file_path, str)]:
+        if re.search(r"\.bz2$", file_path):
+            f = bz2.BZ2File(file_path, 'rb')
+            yield f, os.path.basename(os.path.dirname(file_path))
+            f.close()
         elif os.path.isfile(file_path):
             ext = os.path.splitext(file_path)[1]
             # iterate through a tar archive
@@ -38,29 +62,12 @@ def load_markets(file_paths: list):
     return None
 
 
-def retrieve_game_data(raw_files_directory: str, betfair_trading: betfairlightweight.APIClient) -> dict:
-    # Get list of files corresponding to markets
-    list_markets = [os.path.join(raw_files_directory, daily_dir, file)
-                    for daily_dir in os.listdir(raw_files_directory)
-                    for file in os.listdir(os.path.join(raw_files_directory, daily_dir))]
+def retrieve_game_data(market_paths: list) -> list:
+    # Instantiate list of dicts
+    dict_list = list()
 
-    # Initialize dictionary
-    data_dict = {
-        "event_name": [],
-        "event_id": [],
-        "market_type": [],
-        "market_time": [],
-        "open_date": [],
-        "market_id": [],
-        "publish_time": [],
-        "runner_name": [],
-        "ltp": [],
-        "total_matched": [],
-        "in_play": [],
-    }
-
-    for file_obj, daily_dir in load_markets(list_markets):
-        stream = betfair_trading.streaming.create_historical_generator_stream(
+    for file_obj, game_day in load_markets(market_paths):
+        stream = Streaming.create_historical_generator_stream(
             file_path=file_obj,
             listener=betfairlightweight.StreamListener(max_latency=None),
         )
@@ -68,68 +75,62 @@ def retrieve_game_data(raw_files_directory: str, betfair_trading: betfairlightwe
         with patch("builtins.open", lambda f, _: f):
             gen = stream.get_generator()
 
-            for market_books in gen():
-                for market_book in market_books:
-                    for runner_idx in range(len(market_book.runners)):
-                        data_dict["event_name"].append(market_book.market_definition.event_name)
-                        data_dict["event_id"].append(market_book.market_definition.event_id)
-                        data_dict["market_type"].append(market_book.market_definition.market_type)
-                        data_dict["market_time"].append(market_book.market_definition.market_time)
-                        data_dict["open_date"].append(market_book.market_definition.open_date)
-                        data_dict["market_id"].append(market_book.market_id)
-                        data_dict["publish_time"].append(market_book.publish_time)
-                        data_dict["runner_name"].append(market_book.market_definition.runners[runner_idx].name)
-                        data_dict["ltp"].append(market_book.runners[runner_idx].last_price_traded)
-                        data_dict["total_matched"].append(market_book.runners[runner_idx].total_matched)
-                        data_dict["in_play"].append(market_book.inplay)
+            try:
+                for market_books in gen():
+                    for market_book in market_books:
+                        try:
+                            for runner_idx in range(len(market_book.runners)):
+                                data_dict = {
+                                    "event_name": market_book.market_definition.event_name,
+                                    "event_id": market_book.market_definition.event_id,
+                                    "market_type": market_book.market_definition.market_type,
+                                    "market_time": market_book.market_definition.market_time,
+                                    "open_date": market_book.market_definition.open_date,
+                                    "market_id": market_book.market_id,
+                                    "publish_time": market_book.publish_time,
+                                    "runner_name": market_book.market_definition.runners[runner_idx].name,
+                                    "ltp": market_book.runners[runner_idx].last_price_traded,
+                                    "total_matched": market_book.runners[runner_idx].total_matched,
+                                    "in_play": market_book.inplay,
+                                    "game_day": datetime.strptime(game_day, "%Y%M%d").date()
+                                }
+                                dict_list.append(data_dict)
+                        except AttributeError:
+                            pass
+            except OSError:
+                pass
 
-    return data_dict
-
-
-def preprocess_game_data(data_dict: dict) -> pd.DataFrame:
-    # Create dataframe from data dict
-    df_game = pd.DataFrame(data_dict).drop_duplicates()
-
-    # Ensure to have all information at each tick
-    df_time_ids = df_game[["publish_time"]].drop_duplicates()
-    df_market_ids = df_game[["market_type", "runner_name"]].drop_duplicates()
-
-    df_time_ids["key"] = 1
-    df_market_ids["key"] = 1
-
-    df_ids = df_time_ids.merge(df_market_ids, on="key", how="inner").drop(columns="key")
-
-    df_game = df_ids.merge(df_game, on=["publish_time", "market_type", "runner_name"], how="left")
-
-    # Sort and fill na
-    df_game = df_game.sort_values(["market_type", "runner_name", "publish_time"])
-    df_game["ltp"] = df_game.groupby(["market_type", "runner_name"])["ltp"].fillna(method="ffill")
-
-    # Add odd and proba
-    df_game["odd"] = df_game["ltp"] - 1
-    df_game["proba"] = 1 / df_game["ltp"]
-
-    # Add time from game
-    start_in_play_t = df_game[(df_game["in_play"] == True) & (df_game["market_type"] == "MATCH_ODDS")]["publish_time"].min()
-    game_start_time = start_in_play_t.replace(second=0, microsecond=0, minute=0)
-    df_game["time_from_game_start"] = df_game["publish_time"] - game_start_time
-
-    return df_game
+    return dict_list
 
 
-def parse_game_files(raw_files_directory: str) -> pd.DataFrame:
-    # Create session
-    api_cfg = APIConfig()
-    trading = betfairlightweight.APIClient(username=api_cfg.betfair_user,
-                                           password=api_cfg.betfair_pwd,
-                                           app_key=api_cfg.betfair_certs,
-                                           certs=api_cfg.betfair_certs)
+def process_chunk(chunk: list, path_save: str):
+    dict_list = retrieve_game_data(chunk)
+    df_games = pd.DataFrame(dict_list)
+    df_games = df_games[~df_games.event_id.isnull()]
+    del dict_list
+
+    pd_df_to_parquet(df=df_games, path_save=path_save)
+    del df_games
+
+    gc.collect()
+
+
+def parse_game_files(raw_files_directory: str, path_save: str):
+    # Get list of files corresponding to markets
+    list_market_files = [os.path.join(raw_files_directory, daily_dir, file)
+                         for daily_dir in os.listdir(raw_files_directory)
+                         for file in os.listdir(os.path.join(raw_files_directory, daily_dir))]
+    list_market_files = [MarketFile(path, os.path.getsize(path)) for path in list_market_files]
+
+    # Chunk to process files in multiple iterations
+    chunked_files = create_equal_size_chunk(list_market_files=list_market_files,
+                                            n_chunks=int(len(list_market_files) / 100) + 1)
 
     # Parse files
-    games_dict = retrieve_game_data(raw_files_directory=raw_files_directory,
-                                    betfair_trading=trading)
-
-    # Preprocess data and convert to pandas DataFrame
-    df_preprocessed = preprocess_game_data(data_dict=games_dict)
-
-    return df_preprocessed
+    f = partial(process_chunk, path_save=path_save)
+    try:
+        pool = multiprocessing.Pool(processes=os.cpu_count())
+        pool.map(f, chunked_files)
+    finally:
+        pool.close()
+        pool.join()
