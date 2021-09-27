@@ -11,7 +11,7 @@ class WorkflowDataRetrieval(luigi.WrapperTask):
 
     def requires(self):
         for year in [2018]:
-            # yield TaskParseFiles(year=year, competition_id=self.competition_id)
+            yield TaskParseFiles(year=year, competition_id=self.competition_id)
             yield TaskDownloadFiles(year=year, competition_id=self.competition_id)
 
 

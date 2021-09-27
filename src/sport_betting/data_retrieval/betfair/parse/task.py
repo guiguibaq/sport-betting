@@ -14,7 +14,7 @@ class TaskParseFiles(luigi.Task):
 
     def requires(self):
         reqs = {
-            "raw_files": TaskDownloadFiles(competition_id=self.competition_id, year=self.year)
+            "raw_files": TaskDownloadFiles(competition_id=self.competition_id, year=self.year),
         }
         return reqs
 
@@ -24,6 +24,5 @@ class TaskParseFiles(luigi.Task):
 
     def run(self):
         with self.output().temporary_path() as tmp_path:
-            df_preprocessed = parse_game_files(raw_files_directory=self.input()['raw_files'].path)
-
-            df_preprocessed.to_parquet(tmp_path)
+            parse_game_files(raw_files_directory=self.input()['raw_files'].path,
+                             path_save=tmp_path)
