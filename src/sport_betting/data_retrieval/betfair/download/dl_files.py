@@ -47,9 +47,9 @@ def get_files_to_dl_day(game_day: datetime.datetime, betfair_trading: betfairlig
         "to_year": game_day.year,
         "event_id": None,
         "event_name": None,
-        "market_types_collection": [],
-        "countries_collection": ["GB"],
-        "file_type_collection": []
+        "market_types_collection": None,
+        "countries_collection": None,
+        "file_type_collection": None
     }
 
     # Get list files
