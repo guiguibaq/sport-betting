@@ -12,7 +12,7 @@ def unaccent_str(text: str) -> str:
     :param text: string
     :return: string without special characters
     """
-    text = re.sub(r"\b(A?FC|CF|FK|SC|AS|AC)\b", "", text)
+    text = re.sub(r"\s*\b(A?FC|CF|FK|SC|AS|AC)\b\s*", " ", text)
     return unidecode.unidecode(text).strip()
 
 
