@@ -1,10 +1,10 @@
 # coding: utf-8
-import luigi
-import os
 import configparser
-from sport_betting import CONFIG_DIR
+import os
 
-import re
+import luigi
+
+from sport_betting import CONFIG_DIR
 
 
 class APIConfig(luigi.Config):

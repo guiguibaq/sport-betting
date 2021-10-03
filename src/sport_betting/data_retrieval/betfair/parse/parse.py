@@ -45,21 +45,6 @@ def load_markets(file_paths: list):
         if re.search(r"\.bz2$", file_path):
             f = bz2.BZ2File(file_path, 'rb')
             yield f, os.path.basename(os.path.dirname(file_path))
-            f.close()
-        elif os.path.isfile(file_path):
-            ext = os.path.splitext(file_path)[1]
-            # iterate through a tar archive
-            if ext == '.tar':
-                with tarfile.TarFile(file_path) as archive:
-                    for file in archive:
-                        yield bz2.open(archive.extractfile(file)), os.path.basename(os.path.dirname(file_path))
-            # or a zip archive
-            elif ext == '.zip':
-                with zipfile.ZipFile(file_path) as archive:
-                    for file in archive.namelist():
-                        yield bz2.open(archive.open(file)), os.path.basename(os.path.dirname(file_path))
-
-    return None
 
 
 def retrieve_game_data(market_paths: list) -> list:
@@ -74,29 +59,25 @@ def retrieve_game_data(market_paths: list) -> list:
 
         with patch("builtins.open", lambda f, _: f):
             gen = stream.get_generator()
-
             try:
                 for market_books in gen():
                     for market_book in market_books:
-                        try:
-                            for runner_idx in range(len(market_book.runners)):
-                                data_dict = {
-                                    "event_name": market_book.market_definition.event_name,
-                                    "event_id": market_book.market_definition.event_id,
-                                    "market_type": market_book.market_definition.market_type,
-                                    "market_time": market_book.market_definition.market_time,
-                                    "open_date": market_book.market_definition.open_date,
-                                    "market_id": market_book.market_id,
-                                    "publish_time": market_book.publish_time,
-                                    "runner_name": market_book.market_definition.runners[runner_idx].name,
-                                    "ltp": market_book.runners[runner_idx].last_price_traded,
-                                    "total_matched": market_book.runners[runner_idx].total_matched,
-                                    "in_play": market_book.inplay,
-                                    "game_day": datetime.strptime(game_day, "%Y%M%d").date()
-                                }
-                                dict_list.append(data_dict)
-                        except AttributeError:
-                            pass
+                        for runner_idx in range(len(market_book.runners)):
+                            data_dict = {
+                                "event_name": market_book.market_definition.event_name,
+                                "event_id": market_book.market_definition.event_id,
+                                "market_type": market_book.market_definition.market_type,
+                                "market_time": market_book.market_definition.market_time,
+                                "open_date": market_book.market_definition.open_date,
+                                "market_id": market_book.market_id,
+                                "publish_time": market_book.publish_time,
+                                "runner_name": market_book.market_definition.runners[runner_idx].name,
+                                "ltp": market_book.runners[runner_idx].last_price_traded,
+                                "total_matched": market_book.runners[runner_idx].total_matched,
+                                "in_play": market_book.inplay,
+                                "game_day": datetime.strptime(game_day, "%Y%m%d").date()
+                            }
+                            dict_list.append(data_dict)
             except OSError:
                 pass
 
@@ -129,7 +110,7 @@ def parse_game_files(raw_files_directory: str, path_save: str):
     # Parse files
     f = partial(process_chunk, path_save=path_save)
     try:
-        pool = multiprocessing.Pool(processes=os.cpu_count())
+        pool = multiprocessing.Pool(processes=os.cpu_count() - 1)
         pool.map(f, chunked_files)
     finally:
         pool.close()

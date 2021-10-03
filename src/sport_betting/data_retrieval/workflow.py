@@ -2,8 +2,7 @@
 
 import luigi
 
-from sport_betting.data_retrieval.betfair.download.task import TaskDownloadFiles
-from sport_betting.data_retrieval.betfair.parse.task import TaskParseFiles
+from sport_betting.data_retrieval.betfair.markets.task import TaskMarkets
 
 
 class WorkflowDataRetrieval(luigi.WrapperTask):
@@ -11,8 +10,7 @@ class WorkflowDataRetrieval(luigi.WrapperTask):
 
     def requires(self):
         for year in [2018]:
-            yield TaskParseFiles(year=year, competition_id=self.competition_id)
-            yield TaskDownloadFiles(year=year, competition_id=self.competition_id)
+            yield TaskMarkets(year=year, competition_id=self.competition_id)
 
 
 if __name__ == '__main__':
