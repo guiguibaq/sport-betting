@@ -110,7 +110,7 @@ def parse_game_files(raw_files_directory: str, path_save: str):
     # Parse files
     f = partial(process_chunk, path_save=path_save)
     try:
-        pool = multiprocessing.Pool(processes=os.cpu_count() - 1)
+        pool = multiprocessing.Pool(processes=os.cpu_count())
         pool.map(f, chunked_files)
     finally:
         pool.close()

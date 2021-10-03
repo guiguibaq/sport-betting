@@ -110,8 +110,6 @@ async def download_betfair_files(df_games: DataFrame, dl_directory: str):
                                            certs=api_cfg.betfair_certs)
     trading.login()
 
-    trading.betting.list_events()
-
     # Get list of files to DL
     list_files_tasks = [asyncio.create_task(get_files_to_dl_day(day, trading)) for day in list_game_days]
     list_files_nested = [await t for t in asyncio.as_completed(list_files_tasks)]
