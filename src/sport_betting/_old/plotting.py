@@ -1,18 +1,8 @@
-from typing import List
-import os
-import glob
-import tarfile
-import bz2
-import betfairlightweight
-from betfairlightweight import filters
-import pandas as pd
-import numpy as np
-import datetime
-import json
-from unittest.mock import patch
+from typing import Tuple, List
+
 import matplotlib.pyplot as plt
-from typing import Tuple, List, Dict
-from scipy.stats import poisson
+import numpy as np
+import pandas as pd
 
 
 def plot_proba_through_time(

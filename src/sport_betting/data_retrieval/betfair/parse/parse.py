@@ -4,8 +4,6 @@ import gc
 import multiprocessing
 import os
 import re
-import tarfile
-import zipfile
 from collections import namedtuple
 from datetime import datetime
 from functools import partial
