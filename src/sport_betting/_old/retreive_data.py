@@ -1,19 +1,12 @@
-from typing import List
-import os
-import glob
-import tarfile
 import bz2
-import betfairlightweight
-from betfairlightweight import filters
-import pandas as pd
-import numpy as np
-import datetime
-import json
+import glob
+import os
+import tarfile
+from typing import List, Dict
 from unittest.mock import patch
-import matplotlib.pyplot as plt
-from typing import Tuple, List, Dict
-from scipy.stats import poisson
 
+import betfairlightweight
+import pandas as pd
 
 # Change this certs path to wherever you're storing your certificates
 certs_path = '/Users/guillaume_baquiast/Documents/tmp'

@@ -1,0 +1,10 @@
+betfairlightweight
+pandas
+matplotlib
+scipy
+luigi
+pyarrow
+unidecode
+aiohttp
+more-itertools
+tqdm

@@ -1,17 +1,7 @@
-from typing import List
-import os
-import glob
-import tarfile
-import bz2
-import betfairlightweight
-from betfairlightweight import filters
-import pandas as pd
+from typing import Tuple
+
 import numpy as np
-import datetime
-import json
-from unittest.mock import patch
-import matplotlib.pyplot as plt
-from typing import Tuple, List, Dict
+import pandas as pd
 from scipy.stats import poisson
 
 
