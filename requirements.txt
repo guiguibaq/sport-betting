@@ -7,3 +7,4 @@ pyarrow
 unidecode
 aiohttp
 more-itertools
+tqdm

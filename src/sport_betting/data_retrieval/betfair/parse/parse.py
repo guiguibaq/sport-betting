@@ -98,7 +98,8 @@ def parse_game_files(raw_files_directory: str, path_save: str):
     # Get list of files corresponding to markets
     list_market_files = [os.path.join(raw_files_directory, daily_dir, file)
                          for daily_dir in os.listdir(raw_files_directory)
-                         for file in os.listdir(os.path.join(raw_files_directory, daily_dir))]
+                         for file in os.listdir(os.path.join(raw_files_directory, daily_dir))
+                         if os.path.isdir(os.path.join(raw_files_directory, daily_dir))]
     list_market_files = [MarketFile(path, os.path.getsize(path)) for path in list_market_files]
 
     # Chunk to process files in multiple iterations
