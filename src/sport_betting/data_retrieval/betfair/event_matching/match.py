@@ -17,6 +17,12 @@ def unaccent_str(text: str) -> str:
 
 
 def matching_events(df_games: pd.DataFrame, df_betfair_events: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process matching between Betfair events and soccer games
+    :param df_games: dataframe containing relevant games
+    :param df_betfair_events: dataframe containing Betfair event markets
+    :return: dataframe containing relevant games with relevant Betfair event_id associated
+    """
     # For each game in df_games, get best matching event
     list_idx = list()
     list_event_ids = list()

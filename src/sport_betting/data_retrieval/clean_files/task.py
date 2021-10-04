@@ -23,7 +23,9 @@ class TaskCleanFiles(luigi.Task):
     def run(self):
         data_dir = os.path.dirname(self.input().path)
 
-        for directory in [os.path.join(data_dir, el) for el in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, el))]:
+        # Delete all temporary files directories
+        for directory in [os.path.join(data_dir, el) for el in os.listdir(data_dir)
+                          if os.path.isdir(os.path.join(data_dir, el))]:
             subprocess.call(['rm', 'r', directory])
 
         with self.output().temporary_path() as tmp_path:

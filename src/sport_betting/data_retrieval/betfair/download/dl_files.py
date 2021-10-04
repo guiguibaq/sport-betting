@@ -58,7 +58,7 @@ def download_file(file_path: DatedListFiles, dl_directory: str, betfair_trading:
     :param file_path: Betfair file path
     :param dl_directory: local directory where the file will be stored
     :param betfair_trading: instance of the betfair trading API
-    :return:
+    :return: path of the downloaded file
     """
     if not os.path.exists(dl_directory):
         os.makedirs(dl_directory, exist_ok=True)
@@ -77,7 +77,7 @@ def download_file(file_path: DatedListFiles, dl_directory: str, betfair_trading:
 
 async def download_betfair_files(day: datetime.datetime, dl_directory: str):
     """
-    Download Betfair game day files based on games dataframe
+    Download Betfair game day files
     :param day: game day
     :param dl_directory: local directory where the files will be stored
     :return: list of files downloaded

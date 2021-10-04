@@ -20,7 +20,14 @@ from betfairlightweight.endpoints import Streaming
 MarketFile = namedtuple("MarketFile", ("path", "size"))
 
 
-def create_equal_size_chunk(list_market_files: List[MarketFile], n_chunks: int, sort=True) -> list:
+def create_equal_size_chunk(list_market_files: List[MarketFile], n_chunks: int, sort=True) -> List[List[str]]:
+    """
+    Separate files into chunks of roughly equal sizes (as in total file sizes)
+    :param list_market_files: original list of files
+    :param n_chunks: number of chunks to be created
+    :param sort: boolean to sort files by size if not done previously
+    :return: list of chunks
+    """
     bins = [[0] for _ in range(n_chunks)]
     if sort:
         list_market_files = sorted(list_market_files, key=lambda x: x.size)
@@ -34,18 +41,34 @@ def create_equal_size_chunk(list_market_files: List[MarketFile], n_chunks: int, 
 
 
 def pd_df_to_parquet(df: pd.DataFrame, path_save: str):
+    """
+    Write pandas dataframe to parquet file
+    :param df: pandas dataframe
+    :param path_save: saving path
+    :return:
+    """
     table = pa.Table.from_pandas(df)
     pq.write_to_dataset(table, root_path=path_save, compression='snappy')
 
 
-def load_markets(file_paths: list):
+def load_markets(file_paths: list) -> (bz2.BZ2File, str):
+    """
+    Decompress Betfair market file
+    :param file_paths: list of file paths
+    :return:
+    """
     for file_path in [file_path for file_path in file_paths if isinstance(file_path, str)]:
         if re.search(r"\.bz2$", file_path):
             f = bz2.BZ2File(file_path, 'rb')
             yield f, os.path.basename(os.path.dirname(file_path))
 
 
-def retrieve_game_data(market_paths: list) -> list:
+def retrieve_game_data(market_paths: list) -> List[dict]:
+    """
+    Parse market data from Betfair
+    :param market_paths: list of Betfair market files
+    :return: list of parsed dictionaries
+    """
     # Instantiate list of dicts
     dict_list = list()
 
@@ -82,7 +105,13 @@ def retrieve_game_data(market_paths: list) -> list:
     return dict_list
 
 
-def process_chunk(chunk: list, path_save: str):
+def process_chunk(chunk: List[str], path_save: str):
+    """
+    Parse Betfair market data and write as parquet file
+    :param chunk: list of Betfair files
+    :param path_save: saving path
+    :return:
+    """
     dict_list = retrieve_game_data(chunk)
     df_games = pd.DataFrame(dict_list)
     df_games = df_games[~df_games.event_id.isnull()]
@@ -95,6 +124,12 @@ def process_chunk(chunk: list, path_save: str):
 
 
 def parse_game_files(raw_files_directory: str, path_save: str):
+    """
+    Parse Betfair market files and save as parquet file
+    :param raw_files_directory: directory used to store Betfair files
+    :param path_save: saving path
+    :return:
+    """
     # Get list of files corresponding to markets
     list_market_files = [os.path.join(raw_files_directory, daily_dir, file)
                          for daily_dir in os.listdir(raw_files_directory)
