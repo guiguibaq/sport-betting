@@ -24,5 +24,5 @@ class TaskParseFiles(luigi.Task):
 
     def run(self):
         with self.output().temporary_path() as tmp_path:
-            parse_game_files(raw_files_directory=self.input()['raw_files'].path,
+            parse_game_files(raw_files_directory=os.path.dirname(self.input()['raw_files'].path),
                              path_save=tmp_path)
