@@ -131,10 +131,12 @@ def parse_game_files(raw_files_directory: str, path_save: str):
     :return:
     """
     # Get list of files corresponding to markets
-    list_market_files = [os.path.join(raw_files_directory, daily_dir, file)
-                         for daily_dir in os.listdir(raw_files_directory)
-                         for file in os.listdir(os.path.join(raw_files_directory, daily_dir))
-                         if os.path.isdir(os.path.join(raw_files_directory, daily_dir))]
+    daily_dirs = [os.path.join(raw_files_directory, daily_dir)
+                  for daily_dir in os.listdir(raw_files_directory)
+                  if os.path.isdir(os.path.join(raw_files_directory, daily_dir))]
+    list_market_files = [os.path.join(daily_dir, file)
+                         for daily_dir in daily_dirs
+                         for file in os.listdir(os.path.join(raw_files_directory, daily_dir))]
     list_market_files = [MarketFile(path, os.path.getsize(path)) for path in list_market_files]
 
     # Chunk to process files in multiple iterations
@@ -144,7 +146,7 @@ def parse_game_files(raw_files_directory: str, path_save: str):
     # Parse files
     f = partial(process_chunk, path_save=path_save)
     try:
-        pool = multiprocessing.Pool(processes=os.cpu_count())
+        pool = multiprocessing.Pool(processes=os.cpu_count() - 2)
         pool.map(f, chunked_files)
     finally:
         pool.close()
