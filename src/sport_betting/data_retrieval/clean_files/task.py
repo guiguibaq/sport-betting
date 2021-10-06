@@ -3,7 +3,6 @@ import os
 import subprocess
 
 import luigi
-from luigi.mock import MockTarget
 
 from sport_betting import DATA_DIR
 from sport_betting.data_retrieval.betfair.event_matching.task import TaskMatchingEvents
@@ -16,7 +15,7 @@ class TaskCleanFiles(luigi.Task):
 
     def output(self):
         output_path = os.path.join(DATA_DIR, self.competition_id, str(self.year), "clean_files")
-        return MockTarget(output_path)
+        return luigi.LocalTarget(output_path)
 
     def requires(self):
         yield TaskMarkets(year=self.year, competition_id=self.competition_id)
