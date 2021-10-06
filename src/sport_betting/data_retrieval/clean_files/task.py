@@ -23,7 +23,7 @@ class TaskCleanFiles(luigi.Task):
         yield TaskMatchingEvents(year=self.year, competition_id=self.competition_id)
 
     def run(self):
-        data_dir = os.path.dirname(self.input().path)
+        data_dir = os.path.dirname(self.output().path)
 
         # Delete all temporary files directories
         for directory in [os.path.join(data_dir, el) for el in os.listdir(data_dir)
