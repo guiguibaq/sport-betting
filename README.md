@@ -4,7 +4,7 @@ Explore betting strategies on BetFair exchange.
 
 Organised as such:
 * `/src`: data retrieval and utils for strategies
-* `/notebook`: explore pricing along time and attempt to model prices
+* `/notebook`: explore price structure and systemic investment strategies
 * `/data`: some metadata
 
 ## Data retrieval
