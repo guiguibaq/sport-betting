@@ -39,11 +39,13 @@ The output of the data retrieval module consists of two files :
 ### Arbitrage accross market
 Arbitrage opportunities exist, although:
 i) they either disaper very quickly (low latency is key to benefit from them)
-ii) or they involve exotic market with low liquidy
+ii) or they involve exotic market with low liquidy.
+
 For more details see `/notebook/arbitrage`
 
 ### Poisson distribution
 Although a football game contains many markets, it seems that all markets align on the same Poisson distribution. Therefore, all markets are linked, and knowing the parameters of the Poisson implies knowing all prices. This can be leveraged for arbitrage.
+
 For more details see `/notebook/poisson_distribution`
 
 ### Backtest
